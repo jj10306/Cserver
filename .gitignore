@@ -1,6 +1,8 @@
 # Prerequisites
 *.d
 
+# Binary files
+tcpclient
 # Object files
 *.o
 *.ko
