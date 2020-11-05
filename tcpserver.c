@@ -8,6 +8,52 @@
 #define SERVERPORT 18000
 #define MAXMESSAGE 2048
 
+char *get_filename(char *request, int *len);
+int test_get_filename();
+
+int test_get_filename() {
+  int len = -1;
+  char r1[] = "GET /file1 other stuff";
+  char res1[] = "/file1";
+  char *actual1 = get_filename(r1, &len);
+  printf("Request 1: %s, filename 1: %s, Actual: %s, Actual len %d", r1, res1,
+         actual1, len);
+  return strcmp(actual1, res1);
+}
+// takes raw HTTP request  returns the desired file name and the length through
+// the len param return the length of the filename or -1 if an error occurrs
+char *get_filename(char *request, int *len) {
+  // important assumption is that the request is well formed  and the filename
+  // doesn't have spaces
+  int start, end;
+  start = end = -1;
+  int i = 0;
+  // "GET /filename <other stuff>"
+  // consider using strchr instead of doing this manually
+  while (request[i] != '\r') {
+    if (request[i] == ' ' && start == -1) {
+      start = i;
+    } else if (request[i] == ' ' && end == -1) {
+      end = i;
+      break;
+    }
+    i++;
+  }
+  if (start == end)
+    return NULL;
+  int length = end - start - 1;
+
+  char *filename;
+  if ((filename = calloc(length + 1, sizeof(*filename))) == NULL)
+    return NULL;
+
+  memcpy(filename, &request[start + 1], length);
+  filename[end - 1] = '\0';
+  *len = length;
+
+  return filename;
+}
+
 int main(int argc, char **argv) {
   int listenfd, connfd, n;
   struct sockaddr_in servaddr;

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define SERVERPORT 80
+#define SERVERPORT 18000
 #define MAXMESSAGE 2048
 
 int main(int argc, char **argv) {
