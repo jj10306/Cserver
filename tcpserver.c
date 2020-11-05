@@ -8,6 +8,7 @@
 #define SERVERPORT 18000
 #define MAXMESSAGE 2048
 
+int send_file_contents(int socket, char *filename, int len);
 char *get_filename(char *request, int *len);
 int test_get_filename();
 
@@ -19,6 +20,27 @@ int test_get_filename() {
   printf("Request 1: %s, filename 1: %s, Actual: %s, Actual len %d", r1, res1,
          actual1, len);
   return strcmp(actual1, res1);
+}
+int send_file_contents(int socket, char *filename, int len) {
+  FILE *file = fopen(filename, "r");
+  char buffer[MAXMESSAGE];
+  int n;
+  memset(buffer, 0, MAXMESSAGE);
+  char request_prologue[] = "HTTP/1.0 200 OK\r\n\r\n";
+  write(socket, request_prologue, strlen(request_prologue));
+
+  while ((n = fread(buffer, sizeof(*buffer), MAXMESSAGE, file)) > 0) {
+    printf("%s\n", buffer);
+    write(socket, buffer, n);
+    memset(buffer, 0, MAXMESSAGE);
+  }
+  // close(socket);
+  fclose(file);
+  return 0;
+  // snprintf((char *)buff, sizeof(buff), "HTTP/1.0 200 OK\r\n\r\nJello");
+
+  // write(connfd, (char *)buff, strlen((char *)buff));
+  // close(connfd);
 }
 // takes raw HTTP request  returns the desired file name and the length through
 // the len param return the length of the filename or -1 if an error occurrs
@@ -91,22 +113,16 @@ int main(int argc, char **argv) {
     connfd = accept(listenfd, (struct sockaddr *)NULL, NULL);
 
     memset(recvmessage, 0, MAXMESSAGE);
-
-    while ((n = read(connfd, recvmessage, MAXMESSAGE - 1)) > 0) {
-      printf("\n%s\n", recvmessage);
-
-      if (recvmessage[n - 1] == '\n')
-        break;
-      memset(recvmessage, 0, MAXMESSAGE);
+    char *filename;
+    int len = -1;
+    // assume the message doesn't exceed the MAXMESSAGE siz
+    if ((n = read(connfd, recvmessage, MAXMESSAGE - 1)) > 0) {
+      printf("Raw Request: %s", recvmessage);
+      filename = get_filename((char *)recvmessage, &len);
     }
-    if (n < 0) {
-      printf("Error while reading");
+    if (send_file_contents(connfd, filename, len) < 0) {
+      printf("Something went wrong when sending the file contents\n");
       exit(1);
     }
-
-    snprintf((char *)buff, sizeof(buff), "HTTP/1.0 200 OK\r\n\r\nJello");
-
-    write(connfd, (char *)buff, strlen((char *)buff));
-    close(connfd);
   }
 }

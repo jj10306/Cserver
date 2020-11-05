@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  sprintf(sendmessage, "GET / HTTP/1.0\r\n\r\n");
+  sprintf(sendmessage, "GET /home/jj10306/Cserver/a HTTP/1.0\r\n\r\n");
   sendbytes = strlen(sendmessage);
 
   if (write(sockfd, sendmessage, sendbytes) != sendbytes) {
