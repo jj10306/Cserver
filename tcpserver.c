@@ -22,19 +22,22 @@ int test_get_filename() {
   return strcmp(actual1, res1);
 }
 int send_file_contents(int socket, char *filename, int len) {
+  // check return code
   FILE *file = fopen(filename, "r");
+  if (file == NULL) {
+    printf("Error opening file\n");
+    return 0;
+  }
   char buffer[MAXMESSAGE];
   int n;
   memset(buffer, 0, MAXMESSAGE);
   char request_prologue[] = "HTTP/1.0 200 OK\r\n\r\n";
   write(socket, request_prologue, strlen(request_prologue));
-
   while ((n = fread(buffer, sizeof(*buffer), MAXMESSAGE, file)) > 0) {
     printf("%s\n", buffer);
     write(socket, buffer, n);
     memset(buffer, 0, MAXMESSAGE);
   }
-  // close(socket);
   fclose(file);
   return 0;
   // snprintf((char *)buff, sizeof(buff), "HTTP/1.0 200 OK\r\n\r\nJello");
@@ -119,10 +122,13 @@ int main(int argc, char **argv) {
     if ((n = read(connfd, recvmessage, MAXMESSAGE - 1)) > 0) {
       printf("Raw Request: %s", recvmessage);
       filename = get_filename((char *)recvmessage, &len);
+      printf("%s\n", filename);
     }
     if (send_file_contents(connfd, filename, len) < 0) {
       printf("Something went wrong when sending the file contents\n");
       exit(1);
     }
+    sleep(1);
+    close(connfd);
   }
 }
